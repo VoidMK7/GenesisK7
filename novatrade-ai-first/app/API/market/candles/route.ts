@@ -1,1 +1,3 @@
-
+import {NextRequest,NextResponse} from 'next/server';import {twelveCandles} from '@/lib/providers/twelvedata';
+export const runtime='nodejs';
+export async function GET(req:NextRequest){const symbol=(req.nextUrl.searchParams.get('symbol')||'AAPL').trim();const interval=req.nextUrl.searchParams.get('interval')||'1min';try{const candles=await twelveCandles(symbol,interval);return NextResponse.json({ok:true,symbol,interval,candles,liveExecutionEnabled:false},{headers:{'Cache-Control':'no-store'}})}catch(e){return NextResponse.json({ok:false,error:e instanceof Error?e.message:'Historical data provider error',setupRequired:true,liveExecutionEnabled:false},{status:503})}}
