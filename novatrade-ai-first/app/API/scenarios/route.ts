@@ -1,1 +1,3 @@
-
+import {NextRequest,NextResponse} from 'next/server';import {buildScenarios} from '@/lib/analysis/scenarios';import {twelveCandles} from '@/lib/providers/twelvedata';
+export const runtime='nodejs';
+export async function POST(req:NextRequest){try{const body=await req.json();const symbol=String(body.symbol||'AAPL');const interval=String(body.interval||'1min');const candles=await twelveCandles(symbol,interval,200);const scenarios=buildScenarios(candles,Number(body.riskPct||1));return NextResponse.json({ok:true,symbol,interval,source:'Twelve Data historical candles',asOf:new Date().toISOString(),scenarioType:'deterministic stress tests; not forecasts',scenarios,liveExecutionEnabled:false})}catch(e){return NextResponse.json({ok:false,error:e instanceof Error?e.message:'Scenario generation failed',liveExecutionEnabled:false},{status:503})}}
