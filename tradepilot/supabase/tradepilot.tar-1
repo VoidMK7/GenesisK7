@@ -1,0 +1,877 @@
+tradepilot/�����������������������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267725021�011732� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/components/������������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717351�014126� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/components/RoleSelect.tsx����������������������������������������������������������������0000644�0000000�0000000�00000001613�15267717321�016725� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������"use client";
+import { useRouter } from "next/navigation";
+
+export default function RoleSelect({ userId, role, disabled }: { userId: string; role: string; disabled?: boolean }) {
+  const router = useRouter();
+  async function change(e: React.ChangeEvent<HTMLSelectElement>) {
+    const res = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, role: e.target.value }),
+    });
+    if (!res.ok) alert((await res.json().catch(() => ({}))).error || "Failed");
+    router.refresh();
+  }
+  return (
+    <select defaultValue={role} onChange={change} disabled={disabled} className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-sm">
+      <option value="user">user</option>
+      <option value="teacher">teacher (teaching access)</option>
+      <option value="admin">admin</option>
+    </select>
+  );
+}
+���������������������������������������������������������������������������������������������������������������������tradepilot/components/TeachClient.tsx���������������������������������������������������������������0000644�0000000�0000000�00000005703�15267717321�017053� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+type CardLite = { id: string; title: string; kind: string; notes: string; tags: string[]; filename?: string; createdAt: string };
+
+export default function TeachClient({ cards }: { cards: CardLite[] }) {
+  const router = useRouter();
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function upload(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    setBusy(true); setMsg("");
+    const res = await fetch("/api/teach/upload", { method: "POST", body: new FormData(form) });
+    const j = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) return setMsg(j.error || "Upload failed");
+    form.reset(); setMsg("Saved to AI memory."); router.refresh();
+  }
+  async function remove(id: string) {
+    if (!confirm("Delete this learning card?")) return;
+    await fetch(`/api/teach/cards?id=${id}`, { method: "DELETE" });
+    router.refresh();
+  }
+
+  return (
+    <div className="space-y-6">
+      <form onSubmit={upload} className="card space-y-3">
+        <h2 className="font-semibold">Add a learning card</h2>
+        <input name="title" required placeholder="Title (e.g. 'London session breakout setup')" className="input" />
+        <textarea name="notes" rows={4} placeholder="What should the AI learn from this? Rules, entry/exit logic, risk notes..." className="input" />
+        <input name="tags" placeholder="Tags, comma separated (btc, breakout, scalping)" className="input" />
+        <input name="file" type="file" accept="video/*,image/*,.csv,.txt,.md,.json" className="text-sm" />
+        <p className="text-xs text-slate-500">Text/CSV files are read into memory. Videos and images are stored, but their content is NOT yet analysed: put the key lessons in the notes.</p>
+        <div className="flex items-center gap-3">
+          <button className="btn" disabled={busy}>{busy ? "Uploading..." : "Save card"}</button>
+          {msg && <span className="text-sm text-slate-300">{msg}</span>}
+        </div>
+      </form>
+
+      <div className="space-y-2">
+        <h2 className="font-semibold">Memory ({cards.length} cards)</h2>
+        {cards.length === 0 && <p className="text-sm text-slate-500">Nothing yet.</p>}
+        {cards.map((c) => (
+          <div key={c.id} className="card flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="font-medium">{c.title} <span className="ml-2 rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-400">{c.kind}</span></div>
+              {c.notes && <p className="mt-1 line-clamp-3 text-sm text-slate-400">{c.notes}</p>}
+              {c.tags.length > 0 && <p className="mt-1 text-xs text-emerald-400">#{c.tags.join(" #")}</p>}
+            </div>
+            <button className="btn-ghost shrink-0" onClick={() => remove(c.id)}>Delete</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+�������������������������������������������������������������tradepilot/components/AuthForm.tsx������������������������������������������������������������������0000644�0000000�0000000�00000003573�15267725021�016414� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function AuthForm() {
+  const router = useRouter();
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    const f = new FormData(e.currentTarget);
+    const res = await fetch(`/api/auth/${mode}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.fromEntries(f)),
+    });
+    const j = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) return setError(j.error || "Something went wrong");
+    if (j.confirm) { setMode("login"); return setError("Check your email to confirm your account, then log in."); }
+    router.push("/chat");
+    router.refresh();
+  }
+
+  return (
+    <form onSubmit={submit} className="card w-full max-w-sm space-y-3">
+      <h1 className="text-xl font-semibold">{mode === "login" ? "Log in" : "Create account"}</h1>
+      {mode === "register" && <input name="name" placeholder="Name" required className="input" />}
+      <input name="email" type="email" placeholder="Email" required className="input" />
+      <input name="password" type="password" placeholder="Password (min 8 chars)" minLength={8} required className="input" />
+      {error && <p className="text-sm text-red-400">{error}</p>}
+      <button className="btn w-full" disabled={busy}>{busy ? "..." : mode === "login" ? "Log in" : "Sign up"}</button>
+      <button type="button" className="text-xs text-slate-400 underline" onClick={() => setMode(mode === "login" ? "register" : "login")}>
+        {mode === "login" ? "Need an account? Sign up" : "Have an account? Log in"}
+      </button>
+    </form>
+  );
+}
+�������������������������������������������������������������������������������������������������������������������������������������tradepilot/components/ChatClient.tsx����������������������������������������������������������������0000644�0000000�0000000�00000005425�15267717351�016712� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������"use client";
+import { useState } from "react";
+
+type Msg = { role: "user" | "ai"; text: string; img?: string; cards?: string[] };
+
+export default function ChatClient() {
+  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [input, setInput] = useState("");
+  const [image, setImage] = useState<{ mediaType: string; data: string; url: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  function pick(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 4 * 1024 * 1024) return alert("Image must be under 4MB");
+    const r = new FileReader();
+    r.onload = () => {
+      const url = String(r.result);
+      setImage({ mediaType: f.type, data: url.split(",")[1], url });
+    };
+    r.readAsDataURL(f);
+  }
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy || (!input.trim() && !image)) return;
+    const mine: Msg = { role: "user", text: input, img: image?.url };
+    setMsgs((m) => [...m, mine]);
+    setBusy(true);
+    const body = { message: input, image: image ? { mediaType: image.mediaType, data: image.data } : undefined };
+    setInput(""); setImage(null);
+    const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await res.json().catch(() => ({}));
+    setBusy(false);
+    setMsgs((m) => [...m, { role: "ai", text: res.ok ? j.reply : `Error: ${j.error || "request failed"}`, cards: j.usedCards }]);
+  }
+
+  return (
+    <div className="flex h-[calc(100vh-8rem)] flex-col">
+      <div className="flex-1 space-y-3 overflow-y-auto pb-4">
+        {msgs.length === 0 && <p className="text-sm text-slate-500">Ask about a market, or attach a chart screenshot for analysis. Educational analysis only, not financial advice.</p>}
+        {msgs.map((m, i) => (
+          <div key={i} className={`card max-w-[85%] whitespace-pre-wrap text-sm ${m.role === "user" ? "ml-auto bg-slate-800" : ""}`}>
+            {m.img && <img src={m.img} alt="chart" className="mb-2 max-h-60 rounded" />}
+            {m.text}
+            {m.cards && m.cards.length > 0 && <div className="mt-2 text-xs text-emerald-400">Used taught knowledge: {m.cards.join(", ")}</div>}
+          </div>
+        ))}
+        {busy && <p className="text-sm text-slate-500">Thinking...</p>}
+      </div>
+      <form onSubmit={send} className="flex items-center gap-2">
+        <label className="btn-ghost cursor-pointer">{image ? "Image ✓" : "Chart"}<input type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={pick} /></label>
+        <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about the market..." className="input" />
+        <button className="btn" disabled={busy}>Send</button>
+      </form>
+    </div>
+  );
+}
+�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/components/Nav.tsx�����������������������������������������������������������������������0000644�0000000�0000000�00000002137�15267717264�015420� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import Link from "next/link";
+import type { User } from "@/lib/db";
+
+export default function Nav({ user }: { user: User }) {
+  return (
+    <header className="border-b border-slate-800 bg-slate-900/60">
+      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-5 text-sm">
+          <span className="font-semibold text-emerald-400">TradePilot AI</span>
+          <Link href="/chat" className="hover:text-emerald-300">Chat</Link>
+          {(user.role === "teacher" || user.role === "admin") && (
+            <Link href="/teach" className="hover:text-emerald-300">Teaching</Link>
+          )}
+          {user.role === "admin" && (
+            <Link href="/admin" className="hover:text-emerald-300">Admin</Link>
+          )}
+        </div>
+        <div className="flex items-center gap-3 text-xs text-slate-400">
+          <span>{user.email} · {user.role}</span>
+          <form action="/api/auth/logout" method="post">
+            <button className="btn-ghost">Log out</button>
+          </form>
+        </div>
+      </div>
+    </header>
+  );
+}
+���������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/next.config.mjs��������������������������������������������������������������������������0000644�0000000�0000000�00000000133�15267717241�014671� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������/** @type {import('next').NextConfig} */
+const nextConfig = {};
+export default nextConfig;
+�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/middleware.ts����������������������������������������������������������������������������0000644�0000000�0000000�00000002332�15267725021�014417� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+
+// Refreshes the Supabase session cookie and requires login on protected paths.
+// Role checks happen in pages/API routes (lib/auth.ts) and, ultimately, in database RLS.
+export async function middleware(req: NextRequest) {
+  let res = NextResponse.next({ request: req });
+  const sb = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookies: {
+      getAll: () => req.cookies.getAll(),
+      setAll: (list) => {
+        list.forEach(({ name, value }) => req.cookies.set(name, value));
+        res = NextResponse.next({ request: req });
+        list.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
+      },
+    },
+  });
+  const { data } = await sb.auth.getUser();
+  if (!data.user) {
+    if (req.nextUrl.pathname.startsWith("/api/")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+  return res;
+}
+export const config = {
+  matcher: ["/chat/:path*", "/teach/:path*", "/admin/:path*", "/api/teach/:path*", "/api/admin/:path*", "/api/chat/:path*"],
+};
+������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/tailwind.config.ts�����������������������������������������������������������������������0000644�0000000�0000000�00000000310�15267717241�015360� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import type { Config } from "tailwindcss";
+const config: Config = {
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  theme: { extend: {} },
+  plugins: [],
+};
+export default config;
+������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/supabase/��������������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267725021�013535� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/supabase/migrations/���������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267725021�015711� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/supabase/migrations/0001_init.sql��������������������������������������������������������0000644�0000000�0000000�00000011650�15267725021�020040� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������-- TradePilot AI: schema, row-level security, storage, admin stats.
+-- Run in the Supabase SQL editor (or `supabase db push`).
+
+create table public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text not null,
+  name text not null default '',
+  role text not null default 'user' check (role in ('user','teacher','admin')),
+  created_at timestamptz not null default now()
+);
+
+create table public.cards (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  kind text not null check (kind in ('video','data','note','image')),
+  notes text not null default '',
+  content_text text not null default '',
+  tags text[] not null default '{}',
+  file_path text,
+  created_by uuid not null references public.profiles(id),
+  created_at timestamptz not null default now()
+);
+
+create table public.events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  type text not null check (type in ('register','login','chat','teach_upload')),
+  created_at timestamptz not null default now()
+);
+create index events_created_idx on public.events(created_at);
+create index events_user_idx on public.events(user_id);
+
+-- Role helper (security definer so policies on profiles don't recurse)
+create or replace function public.has_role(roles text[])
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists (select 1 from public.profiles where id = auth.uid() and role = any(roles));
+$$;
+
+-- Auto-create a profile for every new auth user. Everyone starts as 'user'.
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, email, name)
+  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'name', ''));
+  return new;
+end $$;
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+alter table public.profiles enable row level security;
+alter table public.cards enable row level security;
+alter table public.events enable row level security;
+
+-- profiles: read your own; admins read all and are the ONLY ones who can change roles
+create policy "profiles_select" on public.profiles for select
+  using (id = auth.uid() or public.has_role(array['admin']));
+create policy "profiles_admin_update" on public.profiles for update
+  using (public.has_role(array['admin'])) with check (public.has_role(array['admin']));
+
+-- cards: only teachers/admins. The chat server reads them with the service role key.
+create policy "cards_teacher_all" on public.cards for all
+  using (public.has_role(array['teacher','admin']))
+  with check (public.has_role(array['teacher','admin']));
+
+-- events: users log their own activity; only admins read
+create policy "events_insert_own" on public.events for insert with check (user_id = auth.uid());
+create policy "events_admin_select" on public.events for select using (public.has_role(array['admin']));
+
+-- private storage bucket for teaching uploads
+insert into storage.buckets (id, name, public) values ('teaching', 'teaching', false)
+  on conflict (id) do nothing;
+create policy "teaching_files_teacher_all" on storage.objects for all
+  using (bucket_id = 'teaching' and public.has_role(array['teacher','admin']))
+  with check (bucket_id = 'teaching' and public.has_role(array['teacher','admin']));
+
+-- admin dashboard numbers in one call
+create or replace function public.admin_stats()
+returns json language plpgsql security definer set search_path = public as $$
+declare r json;
+begin
+  if not public.has_role(array['admin']) then raise exception 'forbidden'; end if;
+  select json_build_object(
+    'total_users', (select count(*) from profiles),
+    'active_7d',   (select count(distinct user_id) from events where created_at > now() - interval '7 days'),
+    'chats',       (select count(*) from events where type = 'chat'),
+    'logins',      (select count(*) from events where type = 'login'),
+    'cards',       (select count(*) from cards),
+    'teachers',    (select count(*) from profiles where role = 'teacher'),
+    'daily', (select json_agg(json_build_object(
+        'day', d::date,
+        'signups', (select count(*) from profiles where created_at::date = d::date),
+        'active',  (select count(distinct user_id) from events where created_at::date = d::date)
+      ) order by d)
+      from generate_series((current_date - 13)::timestamp, current_date::timestamp, interval '1 day') d),
+    'per_user', (select coalesce(json_object_agg(user_id, c), '{}'::json)
+      from (select user_id, count(*) c from events group by user_id) x)
+  ) into r;
+  return r;
+end $$;
+revoke all on function public.admin_stats() from public, anon;
+grant execute on function public.admin_stats() to authenticated;
+
+-- AFTER you sign up, make yourself the first admin (replace the email):
+-- update public.profiles set role = 'admin' where email = 'you@example.com';
+����������������������������������������������������������������������������������������tradepilot/app/�������������������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717264�012524� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/admin/�������������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717321�013606� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/admin/page.tsx�����������������������������������������������������������������������0000644�0000000�0000000�00000007175�15267725047�015300� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { requireUser } from "@/lib/auth";
+import { supabaseServer } from "@/lib/supabase/server";
+import type { User } from "@/lib/db";
+import Nav from "@/components/Nav";
+import RoleSelect from "@/components/RoleSelect";
+
+export const dynamic = "force-dynamic";
+
+type Stats = {
+  total_users: number; active_7d: number; chats: number; logins: number; cards: number; teachers: number;
+  daily: { day: string; signups: number; active: number }[]; per_user: Record<string, number>;
+};
+
+export default async function AdminPage() {
+  const me = await requireUser(["admin"]);
+  const sb = supabaseServer();
+  const [{ data: st }, { data: profiles }] = await Promise.all([
+    sb.rpc("admin_stats"),
+    sb.from("profiles").select("id,email,name,role,created_at").order("created_at", { ascending: false }),
+  ]);
+  const s = st as Stats;
+  const users = (profiles || []) as User[];
+  const days = s.daily.map((d) => d.day);
+  const signups = s.daily.map((d) => d.signups);
+  const activeUsers = s.daily.map((d) => d.active);
+  const maxBar = Math.max(1, ...signups, ...activeUsers);
+
+  const stats: [string, number][] = [
+    ["Total users", s.total_users],
+    ["Active (7 days)", s.active_7d],
+    ["Chat messages", s.chats],
+    ["Logins", s.logins],
+    ["Learning cards", s.cards],
+    ["Teachers", s.teachers],
+  ];
+
+  return (
+    <>
+      <Nav user={me} />
+      <main className="mx-auto max-w-5xl space-y-6 p-4">
+        <h1 className="text-xl font-semibold">Admin panel</h1>
+
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          {stats.map(([label, value]) => (
+            <div key={label} className="card">
+              <div className="text-xs text-slate-400">{label}</div>
+              <div className="text-2xl font-semibold">{value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="card">
+          <h2 className="mb-1 font-semibold">Last 14 days</h2>
+          <p className="mb-3 text-xs text-slate-400"><span className="text-emerald-400">■</span> new sign-ups &nbsp; <span className="text-sky-400">■</span> active users</p>
+          <div className="flex h-32 items-end gap-1">
+            {days.map((d, i) => (
+              <div key={d} className="flex flex-1 items-end gap-0.5" title={`${d}: ${signups[i]} sign-ups, ${activeUsers[i]} active`}>
+                <div className="w-1/2 rounded-t bg-emerald-500" style={{ height: `${(signups[i] / maxBar) * 100}%`, minHeight: signups[i] ? 2 : 0 }} />
+                <div className="w-1/2 rounded-t bg-sky-500" style={{ height: `${(activeUsers[i] / maxBar) * 100}%`, minHeight: activeUsers[i] ? 2 : 0 }} />
+              </div>
+            ))}
+          </div>
+          <div className="mt-1 flex justify-between text-[10px] text-slate-500"><span>{days[0]}</span><span>{days[13]}</span></div>
+        </div>
+
+        <div className="card overflow-x-auto">
+          <h2 className="mb-3 font-semibold">Users</h2>
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs text-slate-400">
+              <tr><th className="py-1">Name</th><th>Email</th><th>Joined</th><th>Events</th><th>Role</th></tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id} className="border-t border-slate-800">
+                  <td className="py-2">{u.name}</td>
+                  <td>{u.email}</td>
+                  <td>{u.created_at.slice(0, 10)}</td>
+                  <td>{s.per_user[u.id] ?? 0}</td>
+                  <td><RoleSelect userId={u.id} role={u.role} disabled={u.id === me.id} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </>
+  );
+}
+���������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/globals.css��������������������������������������������������������������������������0000644�0000000�0000000�00000001033�15267717264�014656� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { @apply bg-slate-950 text-slate-100 antialiased; }
+.card { @apply rounded-xl border border-slate-800 bg-slate-900 p-5; }
+.input { @apply w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-emerald-500; }
+.btn { @apply rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50; }
+.btn-ghost { @apply rounded-lg border border-slate-700 px-3 py-1.5 text-sm hover:bg-slate-800; }
+�����������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/���������������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717241�013270� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/admin/���������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717241�014360� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/admin/users/���������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717321�015520� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/admin/users/route.ts�������������������������������������������������������������0000644�0000000�0000000�00000001655�15267725047�017241� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { NextResponse } from "next/server";
+import { getUser } from "@/lib/auth";
+import { supabaseServer } from "@/lib/supabase/server";
+
+export async function PATCH(req: Request) {
+  const me = await getUser();
+  if (!me || me.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { userId, role } = await req.json().catch(() => ({}));
+  if (!["user", "teacher", "admin"].includes(role)) return NextResponse.json({ error: "Bad role" }, { status: 400 });
+  if (userId === me.id) return NextResponse.json({ error: "You cannot change your own role" }, { status: 400 });
+  const { data, error } = await supabaseServer().from("profiles").update({ role }).eq("id", userId).select("id");
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data?.length) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  return NextResponse.json({ ok: true });
+}
+�����������������������������������������������������������������������������������tradepilot/app/api/auth/����������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717241�014231� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/auth/logout/���������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717264�015547� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/auth/logout/route.ts�������������������������������������������������������������0000644�0000000�0000000�00000000374�15267725021�017247� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabase/server";
+
+export async function POST(req: Request) {
+  await supabaseServer().auth.signOut();
+  return NextResponse.redirect(new URL("/login", req.url), 303);
+}
+��������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/auth/register/�������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717264�016062� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/auth/register/route.ts�����������������������������������������������������������0000644�0000000�0000000�00000002114�15267725021�017554� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabase/server";
+import { logEvent } from "@/lib/db";
+
+export async function POST(req: Request) {
+  const { name, email, password } = await req.json().catch(() => ({}));
+  if (typeof email !== "string" || typeof password !== "string" || typeof name !== "string")
+    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  if (password.length < 8) return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+
+  const sb = supabaseServer();
+  const { data, error } = await sb.auth.signUp({
+    email: email.trim().toLowerCase(), password, options: { data: { name: name.trim().slice(0, 80) } },
+  });
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  // If "Confirm email" is on in Supabase, there is no session until the user clicks the email link.
+  if (!data.session || !data.user) return NextResponse.json({ ok: true, confirm: true });
+  await logEvent(sb, data.user.id, "register");
+  return NextResponse.json({ ok: true });
+}
+����������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/auth/login/����������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717264�015346� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/auth/login/route.ts��������������������������������������������������������������0000644�0000000�0000000�00000001324�15267725021�017042� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabase/server";
+import { logEvent } from "@/lib/db";
+
+export async function POST(req: Request) {
+  const { email, password } = await req.json().catch(() => ({}));
+  if (typeof email !== "string" || typeof password !== "string")
+    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  const sb = supabaseServer();
+  const { data, error } = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+  if (error || !data.user) return NextResponse.json({ error: "Wrong email or password" }, { status: 401 });
+  await logEvent(sb, data.user.id, "login");
+  return NextResponse.json({ ok: true });
+}
+������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/chat/����������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717351�014211� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/chat/route.ts��������������������������������������������������������������������0000644�0000000�0000000�00000007020�15267725047�015717� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { NextResponse } from "next/server";
+import { getUser } from "@/lib/auth";
+import { logEvent, type Card } from "@/lib/db";
+import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
+
+// UNTESTED. Basic Q&A + chart-image analysis grounded in teaching cards.
+// Not yet built: live web search/sources, X sentiment, simulations, trade execution.
+
+const SYSTEM = `You are TradePilot, a cautious market-analysis assistant.
+- Analyse charts and questions; describe what you see, key levels, and scenarios with rough likelihoods.
+- Be explicit about uncertainty. Never promise profit or give guaranteed outcomes.
+- Never invent sources, past trades, or statistics. If you cannot cite something, say so.
+- You cannot execute trades. This is educational analysis, not financial advice.
+- When "Taught knowledge" is provided, use it and say which card you relied on.`;
+
+// Service role is used here because regular users cannot read cards under RLS.
+// Fine for a few hundred cards; move to Postgres full-text search or pgvector as memory grows.
+async function relevantCards(query: string): Promise<Card[]> {
+  const words = new Set(query.toLowerCase().split(/\W+/).filter((w) => w.length > 2));
+  const { data } = await supabaseAdmin().from("cards").select("*").limit(500);
+  return ((data as Card[]) || [])
+    .map((c) => {
+      const hay = `${c.title} ${c.notes} ${c.tags.join(" ")} ${c.content_text}`.toLowerCase();
+      let score = 0;
+      words.forEach((w) => { if (hay.includes(w)) score++; });
+      return { c, score };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+    .map((x) => x.c);
+}
+
+export async function POST(req: Request) {
+  const user = await getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) return NextResponse.json({ error: "Chat is not configured (missing ANTHROPIC_API_KEY)" }, { status: 503 });
+
+  const { message, image } = (await req.json().catch(() => ({}))) as {
+    message?: string; image?: { mediaType: string; data: string };
+  };
+  if (!message?.trim() && !image) return NextResponse.json({ error: "Empty message" }, { status: 400 });
+
+  const cards = await relevantCards(message || "");
+  const knowledge = cards.length
+    ? "\n\nTaught knowledge:\n" + cards.map((c) => `[Card: ${c.title}] ${c.notes}\n${c.content_text.slice(0, 2000)}`).join("\n---\n")
+    : "";
+
+  const content: unknown[] = [];
+  if (image && /^image\/(png|jpeg|webp|gif)$/.test(image.mediaType)) {
+    content.push({ type: "image", source: { type: "base64", media_type: image.mediaType, data: image.data } });
+  }
+  content.push({ type: "text", text: message?.trim() || "Analyse this chart." });
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({
+      model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5",
+      max_tokens: 1500,
+      system: SYSTEM + knowledge,
+      messages: [{ role: "user", content }],
+    }),
+  });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) return NextResponse.json({ error: j?.error?.message || "Model request failed" }, { status: 502 });
+  await logEvent(supabaseServer(), user.id, "chat");
+  const reply = (j.content || []).filter((b: { type: string }) => b.type === "text").map((b: { text: string }) => b.text).join("\n");
+  return NextResponse.json({ reply, usedCards: cards.map((c) => c.title) });
+}
+����������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/teach/���������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717241�014354� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/teach/upload/��������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717321�015637� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/teach/upload/route.ts������������������������������������������������������������0000644�0000000�0000000�00000004676�15267725047�017366� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { NextResponse } from "next/server";
+import path from "path";
+import crypto from "crypto";
+import { getUser, canTeach } from "@/lib/auth";
+import { supabaseServer } from "@/lib/supabase/server";
+import { logEvent, type Card } from "@/lib/db";
+
+// NOTE: hosting platforms cap request bodies (Vercel ~4.5MB). For large videos, switch to
+// direct browser-to-Storage signed uploads (createSignedUploadUrl). Not implemented yet.
+const MAX_BYTES = 200 * 1024 * 1024;
+const TEXT_EXT = [".txt", ".csv", ".md", ".json"];
+
+export async function POST(req: Request) {
+  const user = await getUser();
+  if (!user || !canTeach(user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const sb = supabaseServer();
+
+  const form = await req.formData();
+  const title = String(form.get("title") || "").trim();
+  const notes = String(form.get("notes") || "").trim();
+  const tags = String(form.get("tags") || "").split(",").map((t) => t.trim().toLowerCase()).filter(Boolean);
+  const file = form.get("file");
+  if (!title) return NextResponse.json({ error: "Title required" }, { status: 400 });
+
+  let kind: Card["kind"] = "note";
+  let file_path: string | null = null;
+  let content_text = "";
+  if (file instanceof File && file.size > 0) {
+    if (file.size > MAX_BYTES) return NextResponse.json({ error: "File too large (max 200MB)" }, { status: 413 });
+    const ext = path.extname(file.name).toLowerCase().replace(/[^.a-z0-9]/g, "");
+    file_path = `${crypto.randomUUID()}${ext}`;
+    const buf = Buffer.from(await file.arrayBuffer());
+    const { error: upErr } = await sb.storage.from("teaching").upload(file_path, buf, { contentType: file.type || undefined });
+    if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
+    if (file.type.startsWith("video/")) kind = "video";
+    else if (file.type.startsWith("image/")) kind = "image";
+    else kind = "data";
+    if (TEXT_EXT.includes(ext)) content_text = buf.toString("utf8").slice(0, 20000);
+  } else if (!notes) {
+    return NextResponse.json({ error: "Add a file or notes" }, { status: 400 });
+  }
+
+  const { data, error } = await sb.from("cards").insert({
+    title: title.slice(0, 120), kind, notes: notes.slice(0, 5000), content_text, tags, file_path, created_by: user.id,
+  }).select("id").single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await logEvent(sb, user.id, "teach_upload");
+  return NextResponse.json({ ok: true, id: data.id });
+}
+������������������������������������������������������������������tradepilot/app/api/teach/cards/���������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717321�015447� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/api/teach/cards/route.ts�������������������������������������������������������������0000644�0000000�0000000�00000002572�15267725047�017167� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { NextResponse } from "next/server";
+import { getUser, canTeach } from "@/lib/auth";
+import { supabaseServer } from "@/lib/supabase/server";
+
+export async function GET() {
+  const user = await getUser();
+  if (!user || !canTeach(user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { data, error } = await supabaseServer().from("cards")
+    .select("id,title,kind,notes,tags,file_path,created_at").order("created_at", { ascending: false });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ cards: data });
+}
+
+export async function DELETE(req: Request) {
+  const user = await getUser();
+  if (!user || !canTeach(user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const id = new URL(req.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  const sb = supabaseServer();
+  const { data: card } = await sb.from("cards").select("file_path").eq("id", id).single();
+  if (!card) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (card.file_path) await sb.storage.from("teaching").remove([card.file_path]);
+  const { error } = await sb.from("cards").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
+��������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/page.tsx�����������������������������������������������������������������������������0000644�0000000�0000000�00000000275�15267717264�014204� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { redirect } from "next/navigation";
+import { getUser } from "@/lib/auth";
+
+export default async function Home() {
+  const u = await getUser();
+  redirect(u ? "/chat" : "/login");
+}
+�����������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/chat/��������������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717351�013440� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/chat/page.tsx������������������������������������������������������������������������0000644�0000000�0000000�00000000517�15267717351�015117� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { requireUser } from "@/lib/auth";
+import Nav from "@/components/Nav";
+import ChatClient from "@/components/ChatClient";
+
+export default async function ChatPage() {
+  const user = await requireUser();
+  return (
+    <>
+      <Nav user={user} />
+      <main className="mx-auto max-w-3xl p-4"><ChatClient /></main>
+    </>
+  );
+}
+���������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/login/�������������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717264�013634� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/login/page.tsx�����������������������������������������������������������������������0000644�0000000�0000000�00000000521�15267717264�015306� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { redirect } from "next/navigation";
+import { getUser } from "@/lib/auth";
+import AuthForm from "@/components/AuthForm";
+
+export default async function LoginPage() {
+  if (await getUser()) redirect("/chat");
+  return (
+    <main className="flex min-h-screen items-center justify-center p-4">
+      <AuthForm />
+    </main>
+  );
+}
+�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/teach/�������������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267717321�013602� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/app/teach/page.tsx�����������������������������������������������������������������������0000644�0000000�0000000�00000001756�15267725047�015273� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { requireUser } from "@/lib/auth";
+import { supabaseServer } from "@/lib/supabase/server";
+import Nav from "@/components/Nav";
+import TeachClient from "@/components/TeachClient";
+
+export const dynamic = "force-dynamic";
+
+export default async function TeachPage() {
+  const user = await requireUser(["teacher", "admin"]);
+  const { data } = await supabaseServer().from("cards")
+    .select("id,title,kind,notes,tags,file_path,created_at").order("created_at", { ascending: false });
+  const cards = (data || []).map((c) => ({ ...c, filename: c.file_path ?? undefined, createdAt: c.created_at }));
+  return (
+    <>
+      <Nav user={user} />
+      <main className="mx-auto max-w-5xl space-y-4 p-4">
+        <h1 className="text-xl font-semibold">Teaching space</h1>
+        <p className="text-sm text-slate-400">Only teacher and admin accounts can see this page. Everything saved here becomes memory the chat assistant can draw on.</p>
+        <TeachClient cards={cards} />
+      </main>
+    </>
+  );
+}
+������������������tradepilot/app/layout.tsx���������������������������������������������������������������������������0000644�0000000�0000000�00000000562�15267717264�014604� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import "./globals.css";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "TradePilot AI",
+  description: "AI market analysis assistant with admin-only teaching space",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+����������������������������������������������������������������������������������������������������������������������������������������������tradepilot/README.md��������������������������������������������������������������������������������0000644�0000000�0000000�00000005412�15267725057�013224� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������# TradePilot AI (starter)
+
+Next.js 14 (App Router) + TypeScript + Tailwind. Supabase (Postgres + Auth + Storage) backend.
+
+## Setup (Supabase)
+1. Create a Supabase project.
+2. SQL editor: run `supabase/migrations/0001_init.sql` (tables, row-level security, private `teaching` storage bucket, admin stats function, new-user trigger).
+3. `cp .env.example .env.local` and fill the URL, anon key and service-role key (Project Settings > API).
+4. `npm install && npm run dev`, open http://localhost:3000 and sign up.
+5. Make yourself admin in the SQL editor: `update public.profiles set role = 'admin' where email = 'you@example.com';`
+6. In /admin, promote other users to **teacher** to give them the Teaching space.
+
+If "Confirm email" is on in Supabase Auth settings, new users must click the email link before logging in (the form shows a notice).
+
+## Status
+
+| Area | Status |
+|---|---|
+| Sign up / log in / log out (Supabase Auth, cookie sessions via @supabase/ssr) | Written, **untested** |
+| Roles: user / teacher / admin, enforced by Postgres row-level security plus server checks | Written, **untested** |
+| Teaching space (teacher+admin only): upload notes, CSV/TXT/JSON, images, videos as learning cards | Written, **untested** |
+| Admin panel: usage stats, 14-day chart, promote/demote users | Written, **untested** |
+| Chat + chart image upload via Anthropic API, grounded in taught cards (keyword match) | Written, **untested**, needs `ANTHROPIC_API_KEY` |
+| Video learning: transcription/frame analysis | **Not built.** Videos are stored only; put lessons in the notes |
+| Live web search with cited sources, images from the internet | **Not built** |
+| X / social-hype checking | **Not built** |
+| 12-scenario simulations | **Not built** |
+| Exchange connector space (API keys, encrypted storage) | **Not built** |
+| Paper trading + trade step logs, risk limits | **Not built** |
+| Live trade execution | **Not built** (build paper trading first) |
+| 24/7 signals and market analysis (needs a background worker) | **Not built** |
+| Strategy storage / trade history | **Not built** |
+
+## Before any real use
+- Large video uploads: the upload route passes files through the server (hosting body limits apply, e.g. ~4.5MB on Vercel). Switch to signed direct-to-Storage uploads.
+- `SUPABASE_SERVICE_ROLE_KEY` bypasses all security rules: server only, never in client code.
+- Add rate limiting; chat memory search is simple keyword matching (upgrade to Postgres full-text or pgvector).
+- The SQL migration has not been run against a real database.
+- Run `npm run build` first. This code was written without being compiled, so expect to fix type errors.
+- Don't give any AI auto-execution on a funded account without hard risk limits and per-trade confirmation. Signals and analysis are not guaranteed to be profitable.
+������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/.gitignore�������������������������������������������������������������������������������0000644�0000000�0000000�00000000061�15267725047�013727� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������node_modules
+.next
+.env
+.env.local
+next-env.d.ts
+�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/package.json�����������������������������������������������������������������������������0000644�0000000�0000000�00000001116�15267725047�014227� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������{
+  "name": "tradepilot",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/ssr": "0.5.2",
+    "@supabase/supabase-js": "2.46.1",
+    "next": "14.2.35",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.10",
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.49",
+    "tailwindcss": "3.4.17",
+    "typescript": "5.7.2"
+  }
+}
+��������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/.env.example�����������������������������������������������������������������������������0000644�0000000�0000000�00000000475�15267725047�014173� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������# Supabase: Project Settings > API
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+# SERVER ONLY. Never expose or prefix with NEXT_PUBLIC_
+SUPABASE_SERVICE_ROLE_KEY=
+# Optional: enables the chat page (untested integration)
+ANTHROPIC_API_KEY=
+ANTHROPIC_MODEL=claude-sonnet-5-5
+���������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/lib/�������������������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267725021�012500� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/lib/supabase/����������������������������������������������������������������������������0000755�0000000�0000000�00000000000�15267725021�014303� 5����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/lib/supabase/server.ts�������������������������������������������������������������������0000644�0000000�0000000�00000001674�15267725021�016171� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
+
+// Per-request client that acts AS the logged-in user (row-level security applies).
+export function supabaseServer() {
+  const store = cookies();
+  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookies: {
+      getAll: () => store.getAll(),
+      setAll: (list) => {
+        try { list.forEach(({ name, value, options }) => store.set(name, value, options)); } catch { /* called from a Server Component; middleware refreshes the session */ }
+      },
+    },
+  });
+}
+
+// Bypasses RLS. SERVER ONLY, never import into client components.
+export function supabaseAdmin() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+��������������������������������������������������������������������tradepilot/lib/auth.ts������������������������������������������������������������������������������0000644�0000000�0000000�00000001460�15267725021�014012� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import { redirect } from "next/navigation";
+import { supabaseServer } from "./supabase/server";
+import type { Role, User } from "./db";
+
+// Verifies the session with Supabase, then loads the profile (role comes from the DB).
+export async function getUser(): Promise<User | null> {
+  const sb = supabaseServer();
+  const { data: auth } = await sb.auth.getUser();
+  if (!auth.user) return null;
+  const { data } = await sb.from("profiles").select("id,email,name,role,created_at").eq("id", auth.user.id).single();
+  return (data as User) ?? null;
+}
+export async function requireUser(roles?: Role[]): Promise<User> {
+  const u = await getUser();
+  if (!u) redirect("/login");
+  if (roles && !roles.includes(u.role)) redirect("/chat");
+  return u;
+}
+export const canTeach = (r: Role) => r === "teacher" || r === "admin";
+����������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/lib/db.ts��������������������������������������������������������������������������������0000644�0000000�0000000�00000001210�15267725021�013427� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������import type { SupabaseClient } from "@supabase/supabase-js";
+
+export type Role = "user" | "teacher" | "admin";
+export type User = { id: string; email: string; name: string; role: Role; created_at: string };
+export type Card = {
+  id: string; title: string; kind: "video" | "data" | "note" | "image";
+  notes: string; content_text: string; tags: string[]; file_path: string | null;
+  created_by: string; created_at: string;
+};
+export type EventType = "register" | "login" | "chat" | "teach_upload";
+
+export async function logEvent(sb: SupabaseClient, userId: string, type: EventType) {
+  await sb.from("events").insert({ user_id: userId, type });
+}
+����������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/tsconfig.json����������������������������������������������������������������������������0000644�0000000�0000000�00000001063�15267717241�014446� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": { "@/*": ["./*"] }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+�����������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������tradepilot/postcss.config.mjs�����������������������������������������������������������������������0000644�0000000�0000000�00000000103�15267717241�015406� 0����������������������������������������������������������������������������������������������������ustar  �root����������������������������root�������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������export default { plugins: { tailwindcss: {}, autoprefixer: {} } };
+�����������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������
