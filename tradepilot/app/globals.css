@@ -1,9 +1,45 @@
+@import "./scene.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body { @apply bg-slate-950 text-slate-100 antialiased; }
-.card { @apply rounded-xl border border-slate-800 bg-slate-900 p-5; }
-.input { @apply w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-emerald-500; }
-.btn { @apply rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50; }
-.btn-ghost { @apply rounded-lg border border-slate-700 px-3 py-1.5 text-sm hover:bg-slate-800; }
+/* Theme tokens (space-separated RGB so Tailwind opacity modifiers work).
+   The existing `slate-*` classes map to a warm paper (light) / charcoal (dark) scale. */
+:root {
+  --slate-50: 20 19 17;   --slate-100: 36 34 30;   --slate-200: 56 53 47;  --slate-300: 82 79 71;
+  --slate-400: 112 108 98; --slate-500: 144 140 129; --slate-600: 190 186 174; --slate-700: 217 213 201;
+  --slate-800: 233 230 220; --slate-900: 250 249 245; --slate-950: 244 242 235;
+  --accent: 190 94 58; --accent-hover: 168 78 45;
+  --em-300: 22 101 52; --em-400: 30 118 78; --em-500: 36 138 92; --em-600: 22 120 70; --em-950: 214 236 222;
+  --red-400: 178 46 42; --red-700: 205 105 95; --red-900: 246 218 212; --red-950: 250 232 228;
+  --sky-400: 28 98 168; --sky-500: 56 128 196; --amber-400: 160 92 10;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --slate-50: 247 246 240; --slate-100: 236 234 224; --slate-200: 218 215 204; --slate-300: 194 191 180;
+    --slate-400: 168 165 155; --slate-500: 128 125 116; --slate-600: 94 91 84; --slate-700: 74 71 66;
+    --slate-800: 56 54 51; --slate-900: 42 41 39; --slate-950: 31 30 29;
+    --accent: 217 123 88; --accent-hover: 228 140 106;
+    --em-300: 110 231 183; --em-400: 52 211 153; --em-500: 16 185 129; --em-600: 5 150 105; --em-950: 6 40 28;
+    --red-400: 248 113 113; --red-700: 185 28 28; --red-900: 127 29 29; --red-950: 69 10 10;
+    --sky-400: 56 189 248; --sky-500: 14 165 233; --amber-400: 251 191 36;
+  }
+}
+
+@layer base {
+  html { color-scheme: light dark; -webkit-text-size-adjust: 100%; }
+  body { @apply bg-slate-950 text-slate-100 antialiased; font-family: var(--sans); line-height: 1.55; }
+  h1, h2, h3 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.015em; }
+  :focus-visible { outline: 2px solid rgb(var(--accent)); outline-offset: 2px; }
+  ::selection { background: rgb(var(--accent) / 0.25); }
+}
+@layer components {
+  .card { @apply rounded-2xl border border-slate-800 bg-slate-900 p-5; }
+  .input { @apply w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-slate-500 focus:border-accent; }
+  .btn { @apply rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50; }
+  .btn-ghost { @apply rounded-xl border border-slate-700 px-3 py-1.5 text-sm transition-colors hover:bg-slate-800; }
+  .prose-chat { font-size: 15px; line-height: 1.7; }
+              }
+  
