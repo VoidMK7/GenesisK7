@@ -1,0 +1,22 @@
+/* 3D candlestick ring. Transform-only animation on a single element = smooth, no layout work. */
+.scene { position: relative; height: 340px; perspective: 1000px; perspective-origin: 50% 38%; contain: layout paint; overflow: hidden; }
+.scene-bob { position: absolute; inset: 0; animation: scene-bob 9s ease-in-out infinite; will-change: transform; }
+.ring { position: absolute; left: 50%; top: 52%; width: 0; height: 0; transform-style: preserve-3d; animation: ring-spin 48s linear infinite; will-change: transform; }
+.candle { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-style: preserve-3d; transform: rotateY(var(--a)) translateZ(150px); }
+.plane { position: absolute; left: -11px; top: var(--y); width: 22px; height: var(--h); transform-style: flat; backface-visibility: visible;
+  background: linear-gradient(var(--c), var(--c)) 50% 0 / 2px 100% no-repeat; }
+.plane::after { content: ""; position: absolute; left: 0; right: 0; top: 24%; bottom: 24%; border-radius: 3px; background: var(--c); }
+.plane.p2 { transform: rotateY(90deg); opacity: .78; }
+.floor { position: absolute; left: 50%; top: 52%; width: 380px; height: 380px; margin: -190px 0 0 -190px; border-radius: 50%;
+  border: 1px solid rgb(var(--slate-700)); transform: translate3d(0, 62px, 0) rotateX(78deg); opacity: .8; }
+.floor.f2 { width: 250px; height: 250px; margin: -125px 0 0 -125px; opacity: .55; }
+
+@keyframes ring-spin { from { transform: rotateX(-12deg) rotateY(0deg); } to { transform: rotateX(-12deg) rotateY(360deg); } }
+@keyframes scene-bob { 0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(0, -8px, 0); } }
+@keyframes dot { 0%, 80%, 100% { transform: scale(.55); opacity: .4; } 40% { transform: scale(1); opacity: 1; } }
+.dots span { display: inline-block; width: 6px; height: 6px; margin-right: 4px; border-radius: 50%; background: rgb(var(--slate-500)); animation: dot 1.2s ease-in-out infinite; }
+.dots span:nth-child(2) { animation-delay: .15s; }
+.dots span:nth-child(3) { animation-delay: .3s; }
+
+@media (max-width: 640px) { .scene { height: 240px; } .candle { transform: rotateY(var(--a)) translateZ(110px); } .floor { width: 280px; height: 280px; margin: -140px 0 0 -140px; } .floor.f2 { width: 180px; height: 180px; margin: -90px 0 0 -90px; } }
+@media (prefers-reduced-motion: reduce) { .scene-bob, .ring, .dots span { animation: none !important; } .ring { transform: rotateX(-12deg) rotateY(25deg); } }
