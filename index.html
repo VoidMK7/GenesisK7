@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08131f">
+  <title>NovaTrade AI — Intelligence Trading Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#"><span class="brand-mark">N</span><span>NOVA<span class="teal">TRADE</span><small>AI INTELLIGENCE TERMINAL</small></span></a>
+      <div class="side-label">WORKSPACE</div>
+      <nav id="main-nav">
+        <button class="nav-link active" data-page="overview"><span>◫</span> Overview</button>
+        <button class="nav-link" data-page="command"><span>✳</span> AI Command Center</button>
+        <button class="nav-link" data-page="markets"><span>⌁</span> Global Markets</button>
+        <button class="nav-link" data-page="strategies"><span>⌘</span> Strategies</button>
+        <button class="nav-link" data-page="copy"><span>◎</span> Copy Trading</button>
+        <button class="nav-link" data-page="portfolio"><span>▥</span> Portfolio & Positions</button>
+        <button class="nav-link" data-page="research"><span>⌕</span> Research & News</button>
+        <button class="nav-link" data-page="backtest"><span>◷</span> Backtesting</button>
+        <div class="side-label">CONTROL</div>
+        <button class="nav-link" data-page="connections"><span>⛓</span> Connections</button>
+        <button class="nav-link" data-page="training"><span>✧</span> AI Training Centre</button>
+        <button class="nav-link" data-page="risk"><span>⬡</span> Risk Management</button>
+        <button class="nav-link" data-page="admin"><span>⚙</span> Administration</button>
+      </nav>
+      <div class="sidebar-bottom"><div class="status-dot"></div><span>System interface ready</span><span class="version">v0.1</span></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobile-menu" aria-label="Toggle menu">☰</button>
+        <div class="breadcrumb">Workspace <span>/</span> <b id="page-title">Overview</b></div>
+        <div class="top-actions"><span class="market-status"><i></i> MARKET DATA: DEMO</span><button class="icon-btn" title="Notifications">♧</button><div class="avatar">N</div></div>
+      </header>
+
+      <section class="page active" id="page-overview">
+        <div class="welcome-row"><div><div class="eyebrow">SUNDAY, NOVEMBER 08, 2026</div><h1>Market overview</h1><p class="muted">Your multi-market intelligence dashboard.</p></div><div class="mode-chip"><span class="pulse"></span> ANALYSIS ONLY</div></div>
+        <div class="notice"><b>DEMO ENVIRONMENT</b><span>Displayed figures are illustrative placeholders. Connect verified data providers to enable live market information. Live trading is disabled.</span></div>
+        <div class="stats-grid">
+          <article class="stat-card"><span class="muted">Portfolio value</span><strong>$24,850.00</strong><small class="positive">+4.82% <span class="muted"> illustrative</span></small></article>
+          <article class="stat-card"><span class="muted">Today's P/L</span><strong class="positive">+$384.20</strong><small class="muted">Demo figure</small></article>
+          <article class="stat-card"><span class="muted">Active strategies</span><strong>08</strong><small class="muted">Across demo markets</small></article>
+          <article class="stat-card"><span class="muted">AI engines</span><strong>4 <em class="online">●</em></strong><small class="muted">Interface status only</small></article>
+        </div>
+        <div class="content-grid">
+          <article class="panel wide"><div class="panel-head"><div><h2>Portfolio performance</h2><p class="muted">Illustrative 7-day overview</p></div><select><option>Last 7 days</option><option>30 days</option></select></div><div class="chart-wrap"><div class="chart-y"><span>25k</span><span>20k</span><span>15k</span><span>10k</span></div><svg class="line-chart" viewBox="0 0 760 210" preserveAspectRatio="none" aria-label="Illustrative portfolio chart"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#12d6c5" stop-opacity=".28"/><stop offset="1" stop-color="#12d6c5" stop-opacity="0"/></linearGradient></defs><path d="M0 165 C40 150 55 172 95 140 S155 145 190 112 S250 135 290 100 S355 125 390 85 S450 100 490 72 S550 95 590 55 S650 75 690 42 S735 50 760 20 L760 210 L0 210Z" fill="url(#area)"/><path d="M0 165 C40 150 55 172 95 140 S155 145 190 112 S250 135 290 100 S355 125 390 85 S450 100 490 72 S550 95 590 55 S650 75 690 42 S735 50 760 20" fill="none" stroke="#12d6c5" stroke-width="3"/></svg></div><div class="chart-x"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>AI engine status</h2><p class="muted">Orchestration overview</p></div><span class="tag">4 ENGINES</span></div><div class="engine-list"><div class="engine-row"><span class="engine-icon">◉</span><div><b>Autonomous Trader</b><small>Awaiting provider configuration</small></div><span class="status-pill idle">IDLE</span></div><div class="engine-row"><span class="engine-icon">⌘</span><div><b>Algorithmic Engine</b><small>Rules and indicators</small></div><span class="status-pill demo">DEMO</span></div><div class="engine-row"><span class="engine-icon">◎</span><div><b>Copy Intelligence</b><small>Source verification required</small></div><span class="status-pill idle">IDLE</span></div><div class="engine-row"><span class="engine-icon">✳</span><div><b>Hybrid Intelligence</b><small>Consensus not configured</small></div><span class="status-pill idle">IDLE</span></div></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>Market watch</h2><p class="muted">Sample assets · not live</p></div><button class="text-btn" data-goto="markets">View markets →</button></div><div class="market-list"><div><b>BTC / USDT</b><small>Crypto</small><strong>$67,842.10</strong><em class="positive">+1.24%</em></div><div><b>ETH / USDT</b><small>Crypto</small><strong>$3,521.80</strong><em class="positive">+0.82%</em></div><div><b>EUR / USD</b><small>Forex</small><strong>1.0842</strong><em class="negative">−0.18%</em></div><div><b>NVDA</b><small>Equity</small><strong>$142.60</strong><em class="positive">+2.11%</em></div></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>Recent activity</h2><p class="muted">System events</p></div></div><div class="activity"><p><i class="activity-dot teal-bg"></i><span><b>Workspace initialized</b><small>Frontend demo loaded</small></span><time>Now</time></p><p><i class="activity-dot"></i><span><b>Trading mode locked</b><small>Analysis-only default</small></span><time>Now</time></p><p><i class="activity-dot"></i><span><b>Provider setup pending</b><small>No external API connected</small></span><time>—</time></p></div></article>
+        </div>
+      </section>
+
+      <section class="page" id="page-command"><div class="page-heading"><div><div class="eyebrow">MULTI-AGENT ORCHESTRATION</div><h1>AI Command Center</h1><p class="muted">Coordinate four specialist engines. Connect providers before enabling analysis.</p></div><span class="mode-chip">ANALYSIS ONLY</span></div><div class="four-grid"><div class="engine-card"><span>◉</span><h3>Autonomous Trader</h3><p>Researches markets and proposes trade plans.</p><small>Provider required</small></div><div class="engine-card"><span>⌘</span><h3>Algorithmic Engine</h3><p>Applies quantitative rules and indicator strategies.</p><small>Data feed required</small></div><div class="engine-card"><span>◎</span><h3>Copy Intelligence</h3><p>Evaluates eligible trader strategies and risk.</p><small>Verified sources required</small></div><div class="engine-card"><span>✳</span><h3>Hybrid Intelligence</h3><p>Compares agent outputs and surfaces disagreement.</p><small>Agents not yet connected</small></div></div><div class="panel"><h2>Analysis workspace</h2><p class="muted">Connect a market-data provider and AI provider to activate evidence-backed analysis. This starter does not generate trading signals.</p><button class="primary-btn" data-goto="connections">Configure connections</button></div></section>
+
+      <section class="page" id="page-markets"><div class="page-heading"><div><div class="eyebrow">MULTI-ASSET COVERAGE</div><h1>Global markets</h1><p class="muted">Provider-backed market data will appear here after configuration.</p></div></div><div class="notice"><b>NO LIVE FEED</b><span>Prices shown in this starter are illustrative. Do not use them to make trading decisions.</span></div><div class="panel"><div class="panel-head"><h2>Asset universe</h2><select><option>All asset classes</option><option>Crypto</option><option>Forex</option><option>Equities</option><option>Commodities</option></select></div><div class="table-scroll"><table><thead><tr><th>Asset</th><th>Class</th><th>Price</th><th>24h change</th><th>Data status</th></tr></thead><tbody><tr><td>BTC/USDT</td><td>Crypto</td><td>—</td><td>—</td><td><span class="status-pill idle">Not connected</span></td></tr><tr><td>EUR/USD</td><td>Forex</td><td>—</td><td>—</td><td><span class="status-pill idle">Not connected</span></td></tr><tr><td>NVDA</td><td>Equity</td><td>—</td><td>—</td><td><span class="status-pill idle">Not connected</span></td></tr><tr><td>Gold</td><td>Commodity</td><td>—</td><td>—</td><td><span class="status-pill idle">Not connected</span></td></tr></tbody></table></div></div></section>
+
+      <section class="page" id="page-strategies"><div class="page-heading"><div><div class="eyebrow">RESEARCH & DECISION RECORDS</div><h1>Strategies</h1><p class="muted">Strategy proposals, evidence, simulations and execution history.</p></div></div><div class="empty-state"><span>⌘</span><h2>No strategies yet</h2><p>Strategies will appear after market feeds and AI analysis services are configured.</p></div></section>
+      <section class="page" id="page-copy"><div class="page-heading"><div><div class="eyebrow">TRADER DISCOVERY</div><h1>Copy trading</h1><p class="muted">Review verified providers before subscribing to any strategy.</p></div></div><div class="empty-state"><span>◎</span><h2>No verified traders connected</h2><p>Trader profiles and performance must come from verifiable records, not sample claims.</p></div></section>
+      <section class="page" id="page-portfolio"><div class="page-heading"><div><div class="eyebrow">ACCOUNT MONITORING</div><h1>Portfolio & positions</h1><p class="muted">Connect an account to retrieve balances and positions.</p></div></div><div class="empty-state"><span>▥</span><h2>No trading account connected</h2><button class="primary-btn" data-goto="connections">Open connections</button></div></section>
+      <section class="page" id="page-research"><div class="page-heading"><div><div class="eyebrow">MARKET INTELLIGENCE</div><h1>Research & news</h1><p class="muted">Source-linked news, economic events and social sentiment.</p></div></div><div class="empty-state"><span>⌕</span><h2>Research sources not configured</h2><p>Connect licensed news, market and social data providers to populate this workspace.</p></div></section>
+      <section class="page" id="page-backtest"><div class="page-heading"><div><div class="eyebrow">QUANTITATIVE RESEARCH</div><h1>Backtesting & simulations</h1><p class="muted">Historical testing must use sourced data and realistic fees, slippage and liquidity assumptions.</p></div></div><div class="empty-state"><span>◷</span><h2>Backtesting engine not connected</h2><p>Simulation services will be connected through secure backend functions.</p></div></section>
+
+      <section class="page" id="page-connections"><div class="page-heading"><div><div class="eyebrow">INTEGRATION HUB</div><h1>Connections</h1><p class="muted">Connect AI providers, market data and authorized trading accounts.</p></div></div><div class="content-grid"><article class="panel"><h2>AI provider (optional)</h2><p class="muted">Users may bring their own provider key. Store and use credentials server-side only.</p><label>Provider</label><select id="ai-provider"><option>Google Gemini</option><option>OpenAI</option><option>Anthropic Claude</option><option>Ollama / compatible endpoint</option><option>Other OpenAI-compatible</option></select><label>API key</label><input type="password" placeholder="Configured securely on backend" disabled><label>Model / endpoint</label><input placeholder="Configure through secure backend" disabled><span class="status-pill idle">Not configured</span></article><article class="panel"><h2>Trading accounts</h2><p class="muted">Only official, authorized broker APIs are supported. No withdrawal permissions.</p><div class="connector-row"><b>Binance</b><span class="status-pill idle">Connector required</span></div><div class="connector-row"><b>Bybit</b><span class="status-pill idle">Connector required</span></div><div class="connector-row"><b>Alpaca</b><span class="status-pill idle">Connector required</span></div><div class="connector-row"><b>Interactive Brokers</b><span class="status-pill idle">Gateway required</span></div><div class="connector-row"><b>MetaTrader 5</b><span class="status-pill idle">Bridge required</span></div></article></div></section>
+
+      <section class="page" id="page-training"><div class="page-heading"><div><div class="eyebrow">ADMIN KNOWLEDGE MANAGEMENT</div><h1>AI Training Centre</h1><p class="muted">Admin-approved knowledge ingestion, retrieval and evaluation.</p></div></div><div class="notice"><b>CONTROLLED KNOWLEDGE</b><span>Uploaded material should be parsed, reviewed, indexed and evaluated before it can influence AI responses.</span></div><div class="empty-state"><span>✧</span><h2>Training pipeline not connected</h2><p>Supabase Storage, document extraction, transcription, embeddings and approval workflows are backend tasks.</p></div></section>
+      <section class="page" id="page-risk"><div class="page-heading"><div><div class="eyebrow">PORTFOLIO PROTECTION</div><h1>Risk management</h1><p class="muted">Independent controls must apply to every strategy and execution path.</p></div></div><div class="four-grid"><div class="stat-card"><span class="muted">Live trading</span><strong class="negative">LOCKED</strong><small>Default safety state</small></div><div class="stat-card"><span class="muted">Daily loss limit</span><strong>Not set</strong><small>Configure per account</small></div><div class="stat-card"><span class="muted">Max position</span><strong>Not set</strong><small>Configure per account</small></div><div class="stat-card"><span class="muted">Emergency stop</span><strong>Not armed</strong><small>Backend control required</small></div></div></section>
+      <section class="page" id="page-admin"><div class="page-heading"><div><div class="eyebrow">PLATFORM CONTROL</div><h1>Administration</h1><p class="muted">Admin-only controls must be protected by server-side role checks and Supabase RLS.</p></div></div><div class="empty-state"><span>⚙</span><h2>Admin services not connected</h2><p>Do not rely on frontend visibility to secure administrator functions.</p></div></section>
+
+      <footer>NovaTrade AI <span>•</span> Frontend starter <span>•</span> No live trading enabled</footer>
+    </main>
+  </div>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
