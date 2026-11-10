@@ -1,0 +1,4 @@
+# Only the settings relevant to the NovaTrade function. Merge into your own supabase/config.toml if you have one.
+[functions.api]
+# The function authenticates callers itself (user JWT, or CRON_SECRET for the cron routes).
+verify_jwt = false
