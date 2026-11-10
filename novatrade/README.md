@@ -1,8 +1,15 @@
-# Deploy on Vercel
-1. Put this folder in a GitHub repo (or run `vercel` from it).
-2. Vercel > Project > Settings > Environment Variables:
-   - SUPABASE_URL       = https://xxxx.supabase.co            (public)
-   - SUPABASE_ANON_KEY  = anon / publishable key              (public, NOT service-role)
-   Optional, only for the /api/tick trigger: CRON_SECRET (same as your Supabase function secret) and TICK_TOKEN (any long random string).
-3. Deploy. Build command and output folder are already set in vercel.json.
-Also add your Vercel URL to ALLOWED_ORIGINS in your Supabase function secrets so the browser is allowed to call it.
+# NovaTrade frontend — one file
+
+`dist/index.html` is the whole app. Open it, or host it anywhere static (Vercel Hobby is fine).
+Edit the two public values near the top of the file:
+
+```js
+window.NOVATRADE_CONFIG = { supabaseUrl: "https://xxxx.supabase.co", supabaseAnonKey: "<anon key>" };
+```
+Never put a service-role key here. With them empty the app still opens and shows live market data from DexScreener.
+
+Rebuild from source (needs esbuild; React is bundled in, only supabase-js loads from a CDN):
+`NM_DIR=/path/to/node_modules node tools/build.mjs dist/index.html`
+
+Screens: Home, Agents (+ Top traders / auto-follow), Activity (trade log with reasons), Token detail, Market, Social (Feed, Community, Chat, People), Profile (edit picture + 1–10 s banner), Wallets, Teach your AI, Copy terminal (light theme), My AI model, Notifications, Account.
+`src/core` is a copy of the backend's memecoin logic so the browser and server agree.
