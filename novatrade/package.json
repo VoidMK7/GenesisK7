@@ -1,0 +1,10 @@
+{
+  "name": "novatrade-backend",
+  "private": true,
+  "scripts": {
+    "gen:router": "node scripts/gen-router.mjs",
+    "test": "tsc -p tsconfig.core.json && node --test tests/*.test.js",
+    "test:sql": "tests/sql/run.sh"
+  },
+  "devDependencies": { "@types/node": "^20.16.10", "typescript": "^5.7.0" }
+}
