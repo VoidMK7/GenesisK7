@@ -1,0 +1,10 @@
+import { createRequire } from "node:module"; import fs from "node:fs";
+const { chromium } = createRequire("/usr/local/lib/node_modules_global/")("playwright");
+const html = fs.readFileSync("dist/index.html", "utf8"); fs.writeFileSync("/tmp/nova_cfg_empty.html", html);
+const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 390, height: 844 } }); const errs = [];
+p.on("pageerror", (e) => errs.push(e.message));
+await p.route("**/cdn.jsdelivr.net/**", (r) => r.fulfill({ status: 200, contentType: "application/javascript", body: "" })); await p.route("**/fonts.g*/**", (r) => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
+await p.route("**/api.dexscreener.com/**", (r) => r.abort());
+await p.goto("file:///tmp/nova_cfg_empty.html#/"); await p.waitForTimeout(500); await p.screenshot({ path: "/tmp/shots/welcome.png" });
+console.log("welcome text ok:", (await p.innerText("body")).includes("Not connected to a backend")); await p.getByText("Explore live memecoins").click(); await p.waitForTimeout(800); await p.screenshot({ path: "/tmp/shots/market_blocked.png" });
+console.log("market shows error notice:", (await p.innerText("body")).includes("Could not load market data")); console.log(errs.length ? errs : "no JS errors"); await b.close();
