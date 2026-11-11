@@ -31,10 +31,10 @@ jobs:
       - name: Set function secrets
         if: ${{ inputs.function }}
         run: |
-          supabase secrets set --project-ref "$REF" \
+          supabase secrets set --yes --project-ref "$REF" \
             CREDENTIAL_ENCRYPTION_KEY='${{ secrets.CREDENTIAL_ENCRYPTION_KEY }}' \
             CRON_SECRET='${{ secrets.CRON_SECRET }}' \
             ALLOWED_ORIGINS='${{ secrets.ALLOWED_ORIGINS }}'
       - name: Deploy api function
         if: ${{ inputs.function }}
-        run: supabase functions deploy api --project-ref "$REF" --no-verify-jwt
+        run: supabase functions deploy api --yes --project-ref "$REF" --no-verify-jwt
