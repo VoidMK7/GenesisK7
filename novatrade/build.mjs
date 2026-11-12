@@ -6,4 +6,5 @@ try { const p = key.split("."); if (p.length === 3 && JSON.parse(Buffer.from(p[1
 let h = fs.readFileSync("index.html", "utf8"); const before = 'supabaseUrl: "", supabaseAnonKey: ""';
 if (!h.includes(before)) { console.error("Config line not found in index.html"); process.exit(1); }
 fs.rmSync("dist", { recursive: true, force: true }); fs.mkdirSync("dist");
+for (const f of ["manifest.webmanifest", "sw.js", "icon-192.png", "icon-512.png"]) if (fs.existsSync(f)) fs.copyFileSync(f, "dist/" + f);
 fs.writeFileSync("dist/index.html", h.replace(before, `supabaseUrl: ${JSON.stringify(url)}, supabaseAnonKey: ${JSON.stringify(key)}`)); console.log("dist/index.html configured for", new URL(url).host);
