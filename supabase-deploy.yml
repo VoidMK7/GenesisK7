@@ -1,0 +1,48 @@
+name: Deploy to Supabase
+# Manual button: GitHub > Actions > "Deploy to Supabase" > Run workflow.
+# Applies any migration not applied before (tracked in a table, so re-running is safe), sets secrets, deploys the `api` function.
+on:
+  workflow_dispatch:
+    inputs:
+      migrations: { description: "Apply database migrations", type: boolean, default: true }
+      function: { description: "Deploy the api function and secrets", type: boolean, default: true }
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: novatrade } }
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with: { version: latest }
+      - name: Apply migrations
+        if: ${{ inputs.migrations }}
+        run: |
+          set -euo pipefail
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "create table if not exists public._nova_migrations (name text primary key, applied_at timestamptz default now())"
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            n=$(basename "$f")
+            if [ "$(psql "$DB_URL" -tA -c "select 1 from public._nova_migrations where name='$n'")" = "1" ]; then echo "skip $n (already applied)"; continue; fi
+            echo "applying $n"
+            psql "$DB_URL" -v ON_ERROR_STOP=1 --single-transaction -f "$f"
+            psql "$DB_URL" -v ON_ERROR_STOP=1 -c "insert into public._nova_migrations(name) values ('$n')"
+          done
+      - name: Set function secrets
+        if: ${{ inputs.function }}
+        env:
+          LIVE_ALLOWED_EMAILS: ${{ secrets.LIVE_ALLOWED_EMAILS }}
+          JUPITER_API_KEY: ${{ secrets.JUPITER_API_KEY }}
+          RPC_URL_SOLANA: ${{ secrets.RPC_URL_SOLANA }}
+        run: |
+          args=(CREDENTIAL_ENCRYPTION_KEY='${{ secrets.CREDENTIAL_ENCRYPTION_KEY }}' CRON_SECRET='${{ secrets.CRON_SECRET }}' ALLOWED_ORIGINS='${{ secrets.ALLOWED_ORIGINS }}')
+          # Optional secrets are only sent when you have created them in GitHub.
+          [ -n "$LIVE_ALLOWED_EMAILS" ] && args+=("LIVE_ALLOWED_EMAILS=$LIVE_ALLOWED_EMAILS")
+          [ -n "$JUPITER_API_KEY" ] && args+=("JUPITER_API_KEY=$JUPITER_API_KEY")
+          [ -n "$RPC_URL_SOLANA" ] && args+=("RPC_URL_SOLANA=$RPC_URL_SOLANA")
+          supabase secrets set --yes --project-ref "$REF" "${args[@]}"
+      - name: Deploy api function
+        if: ${{ inputs.function }}
+        run: supabase functions deploy api --yes --project-ref "$REF" --no-verify-jwt
