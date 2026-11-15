@@ -1,13 +1,13 @@
 import { validateAddress, type MemeChain } from "../../../../_shared/core/memecoin/index.ts";
 import { body, HttpError, rateLimit, route, v } from "../../../../_shared/server/http.ts";
 import { requireUser, serviceDb } from "../../../../_shared/server/auth.ts";
-import { buyPaper, closePaper, loadStrategy, tokenPair } from "../../../../_shared/server/memecoin.ts";
+import { buyPaper, closePaper, loadStrategy, sellPaperPart, tokenPair } from "../../../../_shared/server/memecoin.ts";
 import { liveBuy, liveSell } from "../../../../_shared/server/live.ts";
 
 /**
  * Buy or sell a coin by hand, in paper or live mode.
  * live buy: { mode:"live", side:"buy", mint, usd, slippageBps?, expectOutRaw?, autoExit? }   live sell: { mode:"live", side:"sell", mint, pct }
- * paper buy: { mode:"paper", side:"buy", mint, usd }                                         paper sell: closes the open paper position in that coin
+ * paper buy: { mode:"paper", side:"buy", mint, usd }                                         paper sell: { mode:"paper", side:"sell", mint, pct? } sells that share of the open paper position (default 100 = close it)
  */
 export const POST = route(async (req: Request) => {
   const s = await requireUser(); rateLimit(`swap:${s.userId}`, 10, 60_000); const b = await body(req);
@@ -28,7 +28,8 @@ export const POST = route(async (req: Request) => {
     const { data: open } = await db.from("nova_meme_positions").select("*").eq("user_id", s.userId).eq("mode", "paper").eq("status", "open").eq("token_address", mint);
     if (!open?.length) throw new HttpError(409, "You have no open paper position in this coin.");
     if (!pair) throw new HttpError(502, "No current price is available, so nothing was closed.");
-    let pnl = 0; for (const p of open) pnl += await closePaper(s.userId, p, pair.priceUsd, "manual", "You sold this by hand (paper).", st.slippageBps, "user");
+    const pctPaper = v.num(b, "pct", { min: 1, max: 100, optional: true }) ?? 100;
+    let pnl = 0; for (const p of open) pnl += await sellPaperPart(s.userId, p, pctPaper / 100, pair.priceUsd, st.slippageBps, pctPaper >= 100 ? "You sold this by hand (paper)." : `You sold ${pctPaper}% by hand (paper).`);
     return { ok: true, mode, side, simulated: true, pnlUsd: pnl };
   }
   if (side === "buy") {
@@ -41,3 +42,4 @@ export const POST = route(async (req: Request) => {
   const r = await liveSell(s.userId, { mint, fraction: pct / 100, slippageBps: slip, agent: "user", reason: "You sold this by hand.", exitReason: "manual" });
   return { ok: true, mode, side, simulated: false, signature: r.signature, usd: r.proceedsUsd, pnlUsd: r.pnlUsd, closed: r.closed };
 });
+                                       
